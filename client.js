@@ -55,21 +55,19 @@ app.get('/callback', (req, res) =>{
 		data: {
 			code: req.query.code,
 		}
-	}).then(
-		response =>{
-			axios({
-				method: 'GET',
-				url: config.userInfoEndpoint,
-				headers: {
-					authorization: `bearer ${response.data.access_token}`,
-				}
-			}).then(userInfo =>{
-				return res.render('welcome', { user: userInfo.data });
-			}).catch(userInfoErr =>{
-				return res.status(401).send(userInfoErr);
-			});
-		}
-	).catch(err =>{
+	}).then( response =>{
+		return axios({
+			method: 'GET',
+			url: config.userInfoEndpoint,
+			headers: {
+				authorization: `bearer ${response.data.access_token}`,
+			}
+		});
+	}).
+	then(userInfo =>{
+		return res.render('welcome', { user: userInfo.data });
+	})
+	.catch(err =>{
 		return res.status(401).send(err);
 	});
 });
