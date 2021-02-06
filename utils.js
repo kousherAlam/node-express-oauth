@@ -36,7 +36,7 @@ function deleteAllKeys(obj) {
 }
 
 function timeout(req, res, next) {
-	res.setTimeout(400, function () {
+	res.setTimeout(4000, function () {
 		res.status(408).end()
 	})
 
