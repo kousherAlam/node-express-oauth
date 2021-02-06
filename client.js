@@ -1,8 +1,8 @@
-const url = require("url")
 const express = require("express")
 const bodyParser = require("body-parser")
 const axios = require("axios").default
-const { randomString, timeout } = require("./utils")
+const { randomString, timeout } = require("./utils");
+const url = require('url');
 
 const config = {
 	port: 9000,
@@ -20,63 +20,65 @@ let state = ""
 const app = express()
 app.set("view engine", "ejs")
 app.set("views", "assets/client")
-app.use(timeout)
+// app.use(timeout)
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/authorize", (req, res) => {
-	state = randomString()
-	const redirectUrl = url.parse(config.authorizationEndpoint)
-	redirectUrl.query = {
-		response_type: "code",
+/*
+Your code here
+*/
+app.get('/authorize', (req, res) =>{
+	state = randomString();
+	const redirectURL = url.parse(config.authorizationEndpoint);
+	redirectURL.query = {
+		response_type: 'code',
 		client_id: config.clientId,
 		redirect_uri: config.redirectUri,
 		scope: "permission:name permission:date_of_birth",
-		state: state,
-	}
-	res.redirect(url.format(redirectUrl))
-})
+		state,
+	};
+	return res.redirect(url.format(redirectURL));
+});
 
-app.get("/callback", (req, res) => {
-	if (req.query.state !== state) {
-		res.status(403).send("Error: state mismatch")
-		return
+
+app.get('/callback', (req, res) =>{
+	if(!(state === req.query.state)){
+		return res.status(403).send('Forbidden');
 	}
-	const { code } = req.query
 	axios({
-		method: "POST",
+		method: 'POST',
 		url: config.tokenEndpoint,
 		auth: {
 			username: config.clientId,
 			password: config.clientSecret,
 		},
 		data: {
-			code,
+			code: req.query.code,
 		},
 		validateStatus: null,
+	}).then( response =>{
+		return axios({
+			method: 'GET',
+			url: config.userInfoEndpoint,
+			headers: {
+				authorization: `bearer ${response.data.access_token}`,
+			}
+		});
+	}).
+	then(userInfo =>{
+		return res.render('welcome', { user: userInfo.data });
 	})
-		.then((response) => {
-			return axios({
-				method: "GET",
-				url: config.userInfoEndpoint,
-				headers: {
-					authorization: "bearer " + response.data.access_token,
-				},
-			})
-		})
-		.then((response) => {
-			res.render("welcome", { user: response.data })
-		})
-		.catch((err) => {
-			console.error(err)
-			res.status(500).send("Error: something went wrong")
-		})
-})
+	.catch(err =>{
+		return res.status(401).send(err);
+	});
+});
+
 
 const server = app.listen(config.port, "localhost", function () {
-	var host = server.address().address
-	var port = server.address().port
-})
+	var host = server.address().address;
+	var port = server.address().port;
+	console.log(`Client is running on http://${host}:${port}`);
+});
 
 // for testing purposes
 
