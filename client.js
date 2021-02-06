@@ -20,14 +20,15 @@ let state = ""
 const app = express()
 app.set("view engine", "ejs")
 app.set("views", "assets/client")
-app.use(timeout)
+// app.use(timeout)
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({ extended: true }));
 
 /*
 Your code here
 */
-app.get('authorize', (req, res) =>{
+app.get('/authorize', (req, res) =>{
+	console.log('hello ');
 	state = randomString();
 	const redirectURL = url.parse(config.authorizationEndpoint);
 	redirectURL.query = {
@@ -37,12 +38,11 @@ app.get('authorize', (req, res) =>{
 		scope: "permission:name permission:date_of_birth",
 		state,
 	};
-
 	return res.redirect(url.format(redirectURL));
 });
 
 
-app.get('callback', (req, res) =>{
+app.get('/callback', (req, res) =>{
 	if(!(state === req.query.state)){
 		return res.status(403).send('Forbidden');
 	}
@@ -62,10 +62,10 @@ app.get('callback', (req, res) =>{
 				method: 'GET',
 				url: config.userInfoEndpoint,
 				headers: {
-					authorization: `bearer ${response.access_token}`,
+					authorization: `bearer ${response.data.access_token}`,
 				}
 			}).then(userInfo =>{
-				return res.render('welcome', userInfo.data);
+				return res.render('welcome', { user: userInfo.data });
 			}).catch(userInfoErr =>{
 				return res.status(401).send(userInfoErr);
 			});
@@ -80,7 +80,9 @@ const server = app.listen(config.port, "localhost", function () {
 	var host = server.address().address;
 	var port = server.address().port;
 	console.log(`Client is running on http://${host}:${port}`);
-})
+}, err =>{
+	console.log(err);
+});
 
 // for testing purposes
 
