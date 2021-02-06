@@ -79,8 +79,6 @@ const server = app.listen(config.port, "localhost", function () {
 	var host = server.address().address;
 	var port = server.address().port;
 	console.log(`Client is running on http://${host}:${port}`);
-}, err =>{
-	console.log(err);
 });
 
 // for testing purposes
