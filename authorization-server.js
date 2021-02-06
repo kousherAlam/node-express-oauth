@@ -9,6 +9,8 @@ const {
 	timeout,
 } = require("./utils")
 
+const path = require('path');
+
 const config = {
 	port: 9001,
 	privateKey: fs.readFileSync("assets/private_key.pem"),
@@ -53,6 +55,78 @@ app.use(bodyParser.urlencoded({ extended: true }))
 /*
 Your code here
 */
+app.get('/authorize', (req, response)=>{
+	const client_id = req.query.client_id;
+	const client = clients[client_id];
+	if(!client){
+		response.status(401);
+		return response.json({message: 'No client found'});
+	}
+	const scopes = req.query.scopes ? req.query.scopes.split(" ") : [];
+	if(!containsAll(client.scopes, scopes)){
+		response.status(401);
+		return response.json({message: 'Scope are not valid.'});
+	}
+	
+	const requestId = randomString();
+	requests[requestId] = req.query;
+	response.status(200);
+	return response.render('login', {client, scope: req.query.scopes, requestId: requestId});
+});
+
+
+app.post('/approve', (req, response) =>{
+	const {userName, password, requestID} = req.body;
+	const {redirect_uri, state} = req.query;
+	const userPass = users[userName];
+	if(!(userPass && userPass === password)){
+		response.status(401);
+		return response.json({message: 'Not a valid user.'});
+	}
+	const request = requests[requestID]; 
+	if(!(request)){
+		response.status(401);
+		return response.json({message: 'RequestID is not valid.'});
+	}
+	const requestID = randomString();
+	authorizationCodes[requestID] = {
+		clientReq: req, 
+		userName, 
+	}
+	return response.redirect(`${redirect_uri}?code=${requestID}&state=${state}`);
+});
+
+app.post('/token', (req, response) =>{
+	const authToken = req.headers.authorization;
+	if(!authToken){
+		response.status(401);
+		return response.json({message: 'Please provide an auth token.'});
+	}
+	const {clientId, clientSecret} = decodeAuthCredentials(authToken);
+	const client = clients[clientId];
+	if(!(client && client.clientSecret === clientSecret)){
+		response.status(401);
+		return response.json({message: 'Unauthorize client'});
+	}
+
+	const {code} = req.body;
+	const autorizationCode = authorizationCodes[code];
+	if(!autorizationCode){
+		response.status(401);
+		return response.json({message: 'Invalid Authorize code.'});
+	}
+	delete authorizationCodes[code];
+	
+	const signedtoken = jwt.sign(
+		{userName: autorizationCode,userName, scope: autorizationCode.clientReq.scope}, 
+		path.join(__dirname, 'assets', 'private_key.pem'),
+		{
+			algorithm: 'RS256',
+		}
+	)
+
+	return response.json({token_type: 'Bearer', access_token: signedtoken}).status(200);
+});
 
 const server = app.listen(config.port, "localhost", function () {
 	var host = server.address().address
