@@ -89,11 +89,11 @@ app.post('/approve', (req, response) =>{
 		return response.json({message: 'RequestID is not valid.'});
 	}
 	const randomCode = randomString();
-	authorizationCodes[requestID] = {
+	authorizationCodes[randomCode] = {
 		clientReq: req, 
 		userName, 
 	}
-	return response.redirect(`${redirect_uri}?code=${requestID}&state=${state}`);
+	return response.redirect(`${redirect_uri}?code=${randomCode}&state=${state}`);
 });
 
 app.post('/token', (req, response) =>{
@@ -116,10 +116,14 @@ app.post('/token', (req, response) =>{
 		return response.json({message: 'Invalid Authorize code.'});
 	}
 	delete authorizationCodes[code];
-	
+	console.log(autorizationCode);
+	var privateKey = fs.readFileSync(path.join(__dirname, 'assets', 'private_key.pem'));
 	const signedtoken = jwt.sign(
-		{userName: autorizationCode,userName, scope: autorizationCode.clientReq.scope}, 
-		path.join(__dirname, 'assets', 'private_key.pem'),
+		{ 
+			userName: autorizationCode.userName, 
+			scope: autorizationCode.clientReq.scope
+		}, 
+		privateKey,
 		{
 			algorithm: 'RS256',
 		}
