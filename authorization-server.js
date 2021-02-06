@@ -10,6 +10,7 @@ const {
 } = require("./utils")
 
 const path = require('path');
+const url = require('url');
 
 const config = {
 	port: 9001,
@@ -56,14 +57,14 @@ app.use(bodyParser.urlencoded({ extended: true }))
 Your code here
 */
 app.get('/authorize', (req, response)=>{
-	const client_id = req.query.client_id;
+	const {client_id} = req.query;
 	const client = clients[client_id];
 	if(!client){
 		response.status(401);
 		return response.json({message: 'No client found'});
 	}
-	const scopes = req.query.scopes ? req.query.scopes.split(" ") : [];
-	if(!containsAll(client.scopes, scopes)){
+	const scopes = req.query.scope ? req.query.scope.split(" ") : [];
+	if(!(containsAll(client.scopes, scopes))){
 		response.status(401);
 		return response.json({message: 'Scope are not valid.'});
 	}
@@ -74,26 +75,26 @@ app.get('/authorize', (req, response)=>{
 	return response.render('login', {client, scope: req.query.scopes, requestId: requestId});
 });
 
-
-app.post('/approve', (req, response) =>{
-	const {userName, password, requestID} = req.body;
-	const {redirect_uri, state} = req.query;
-	const userPass = users[userName];
-	if(!(userPass && userPass === password)){
-		response.status(401);
-		return response.json({message: 'Not a valid user.'});
+app.post("/approve", (req, res) => {
+	const { userName, password, requestId } = req.body
+	if (!userName || users[userName] !== password) {
+		res.status(401);
+		return res.send("Error: user not authorized");
 	}
-	const request = requests[requestID]; 
-	if(!(request)){
-		response.status(401);
-		return response.json({message: 'RequestID is not valid.'});
+	const clientReq = requests[requestId]
+	delete requests[requestId]
+	if (!clientReq) {
+		res.status(401)
+		return res.send("Error: invalid user request");
 	}
-	const randomCode = randomString();
-	authorizationCodes[randomCode] = {
-		clientReq: req, 
-		userName, 
+	const code = randomString()
+	authorizationCodes[code] = { clientReq, userName }
+	const redirectUri = url.parse(clientReq.redirect_uri)
+	redirectUri.query = {
+		code,
+		state: clientReq.state,
 	}
-	return response.redirect(`${redirect_uri}?code=${randomCode}&state=${state}`);
+	return res.redirect(url.format(redirectUri))
 });
 
 app.post('/token', (req, response) =>{
@@ -116,7 +117,6 @@ app.post('/token', (req, response) =>{
 		return response.json({message: 'Invalid Authorize code.'});
 	}
 	delete authorizationCodes[code];
-	console.log(autorizationCode);
 	var privateKey = fs.readFileSync(path.join(__dirname, 'assets', 'private_key.pem'));
 	const signedtoken = jwt.sign(
 		{ 
