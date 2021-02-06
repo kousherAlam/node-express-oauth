@@ -88,7 +88,7 @@ app.post('/approve', (req, response) =>{
 		response.status(401);
 		return response.json({message: 'RequestID is not valid.'});
 	}
-	const requestID = randomString();
+	const randomCode = randomString();
 	authorizationCodes[requestID] = {
 		clientReq: req, 
 		userName, 
