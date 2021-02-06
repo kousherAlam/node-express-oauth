@@ -57,8 +57,10 @@ app.get('/user-info', (req, res) =>{
 });
 
 const server = app.listen(config.port, "localhost", function () {
-	var host = server.address().address
-	var port = server.address().port
+	var host = server.address().address;
+	var port = server.address().port;
+
+	console.log(`Protected Resource server is running on http://${host}:${port}`);
 })
 
 // for testing purposes

@@ -2,9 +2,6 @@
 
 A project to learn how to implement a custom OAuth2.0 solution using NodeJs.
 
-
-## First need to think about oauth 2.0 and the project what i'm building. 
-
 ## How to run solution
 
 1. Go to the `solution` branch
@@ -15,9 +12,3 @@ A project to learn how to implement a custom OAuth2.0 solution using NodeJs.
 6. To begin go to [http://localhost:9000/authorize](http://localhost:9000/authorize). This will take you to the authorization page. The sample user data can be found [here](authorization-server.js#L29). For example, `user1` and `password1` are one username-password pair.
 7. If all goes well, you should be taken to a welcome page showing the users information.
 
-
-
-## Task to do a complete project
-- user will be able to create thier account. 
-- user will be able to login into their accout.
-- 

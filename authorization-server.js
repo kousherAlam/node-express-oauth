@@ -117,13 +117,12 @@ app.post('/token', (req, response) =>{
 		return response.json({message: 'Invalid Authorize code.'});
 	}
 	delete authorizationCodes[code];
-	var privateKey = fs.readFileSync(path.join(__dirname, 'assets', 'private_key.pem'));
 	const signedtoken = jwt.sign(
 		{ 
 			userName: autorizationCode.userName, 
 			scope: autorizationCode.clientReq.scope
 		}, 
-		privateKey,
+		config.privateKey,
 		{
 			algorithm: 'RS256',
 		}
@@ -135,7 +134,9 @@ app.post('/token', (req, response) =>{
 const server = app.listen(config.port, "localhost", function () {
 	var host = server.address().address
 	var port = server.address().port
-})
+
+	console.log(`Authorize server is running on ${host}:${port}`);
+});
 
 // for testing purposes
 
