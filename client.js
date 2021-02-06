@@ -28,7 +28,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 Your code here
 */
 app.get('/authorize', (req, res) =>{
-	console.log('hello ');
 	state = randomString();
 	const redirectURL = url.parse(config.authorizationEndpoint);
 	redirectURL.query = {
